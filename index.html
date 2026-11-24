@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>霍格華茲決鬥：魔杖與咒語試煉</title>
+  <style>
+    :root {
+      --bg-dark: #0e111a;
+      --panel: #181e2e;
+      --panel-border: #334164;
+      --gold: #e6b85c;
+      --text: #f3f5fa;
+      --muted: #9aa5be;
+      --hp-green: #38c172;
+      --mp-blue: #4da3ff;
+      --danger: #e35d6a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1d263b 0%, var(--bg-dark) 70%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 820px;
+      background: rgba(24, 30, 46, 0.95);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    }
+
+    header {
+      text-align: center;
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      color: var(--gold);
+      font-size: 1.75rem;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .arena {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .arena {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .combatant {
+      background: #121724;
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .combatant-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .combatant-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .badge {
+      font-size: 0.78rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(230, 184, 92, 0.16);
+      color: var(--gold);
+      border: 1px solid rgba(230, 184, 92, 0.4);
+    }
+
+    .stat-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .bar-bg {
+      width: 100%;
+      height: 12px;
+      background: #232b42;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .hp-fill {
+      background: linear-gradient(90deg, #2ca05a, var(--hp-green));
+    }
+
+    .mp-fill {
+      background: linear-gradient(90deg, #2b7de9, var(--mp-blue));
+    }
+
+    .shield-text {
+      font-size: 0.82rem;
+      color: #8be9fd;
+      min-height: 18px;
+    }
+
+    .spells {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 600px) {
+      .spells {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    button.spell-btn {
+      background: #1e273d;
+      color: var(--text);
+      border: 1px solid #3c4d75;
+      border-radius: 10px;
+      padding: 12px 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    button.spell-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+      background: #26324f;
+    }
+
+    button.spell-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .spell-title {
+      font-weight: 700;
+      color: var(--gold);
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .spell-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .log-box {
+      background: #0b0e16;
+      border: 1px solid #28334e;
+      border-radius: 10px;
+      padding: 14px;
+      height: 160px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .log-entry {
+      margin-bottom: 6px;
+    }
+
+    .log-player { color: #9be7a8; }
+    .log-enemy { color: #ff9aa2; }
+    .log-system { color: var(--gold); }
+
+    .footer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .restart-btn {
+      background: var(--gold);
+      color: #141824;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .restart-btn:hover {
+      filter: brightness(1.08);
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <header>
+      <h1>⚡ 霍格華茲決鬥：咒語試煉</h1>
+      <p>運用咒語與魔力管理，擊敗來襲的食死人與黑巫師！</p>
+    </header>
+
+    <section class="arena">
+      <div class="combatant">
+        <div class="combatant-header">
+          <span class="combatant-name">🧙‍♂️ 霍格華茲巫師</span>
+          <span class="badge" id="wave-badge">第 1 波</span>
+        </div>
+        <div class="stat-label">
+          <span>生命值 (HP)</span>
+          <span id="player-hp-text">100 / 100</span>
+        </div>
+        <div class="bar-bg">
+          <div class="bar-fill hp-fill" id="player-hp-bar" style="width: 100%;"></div>
+        </div>
+        <div class="stat-label">
+          <span>魔力值 (MP)</span>
+          <span id="player-mp-text">60 / 60</span>
+        </div>
+        <div class="bar-bg">
+          <div class="bar-fill mp-fill" id="player-mp-bar" style="width: 100%;"></div>
+        </div>
+        <div class="shield-text" id="player-shield"></div>
+      </div>
+
+      <div class="combatant">
+        <div class="combatant-header">
+          <span class="combatant-name" id="enemy-name">🖤 食死人斥候</span>
+          <span class="badge" id="enemy-intent">準備施咒</span>
+        </div>
+        <div class="stat-label">
+          <span>對手生命值 (HP)</span>
+          <span id="enemy-hp-text">80 / 80</span>
+        </div>
+        <div class="bar-bg">
+          <div class="bar-fill hp-fill" id="enemy-hp-bar" style="width: 100%;"></div>
+        </div>
+        <p class="spell-desc" id="enemy-desc">擅長使用昏擊咒與黑魔法攻擊。</p>
+      </div>
+    </section>
+
+    <section class="spells" id="spell-buttons">
+      <button class="spell-btn" data-spell="stupefy">
+        <div class="spell-title">
+          <span>✨ 昏擊咒 (Stupefy)</span>
+          <span>0 MP</span>
+        </div>
+        <div class="spell-desc">發射紅光咒語造成 16～22 點傷害，並恢復 8 點魔力。</div>
+      </button>
+
+      <button class="spell-btn" data-spell="expelliarmus">
+        <div class="spell-title">
+          <span> disarm 去去武器走</span>
+          <span>20 MP</span>
+        </div>
+        <div class="spell-desc">造成 26～34 點傷害，並干擾對手下一回合攻擊力降低 40%。</div>
+      </button>
+
+      <button class="spell-btn" data-spell="protego">
+        <div class="spell-title">
+          <span>🛡️ 破心護 (Protego)</span>
+          <span>15 MP</span>
+        </div>
+        <div class="spell-desc">張開魔法護盾抵擋 24 點傷害，並反彈 10 點傷害給對手。</div>
+      </button>
+
+      <button class="spell-btn" data-spell="patronus">
+        <div class="spell-title">
+          <span>🦌 呼神護衛 (Expecto Patronum)</span>
+          <span>30 MP</span>
+        </div>
+        <div class="spell-desc">喚出銀色護衛獸，恢復 28 點生命值並造成 22 點淨化傷害。</div>
+      </button>
+    </section>
+
+    <section class="log-box" id="log-box"></section>
+
+    <div class="footer-actions">
+      <span class="spell-desc" id="status-tip">請選擇一個咒語開始本回合決鬥。</span>
+      <button class="restart-btn" id="restart-btn">重新開始決鬥</button>
+    </div>
+  </div>
+
+  <script>
+    const ENEMIES = [
+      { name: "🖤 食死人斥候", maxHp: 80, atkMin: 12, atkMax: 18, desc: "擅長使用昏擊咒與黑魔法攻擊。" },
+      { name: "👻 活米村催狂魔", maxHp: 105, atkMin: 15, atkMax: 22, desc: "散發刺骨寒意，攻擊力高且難以抵擋。" },
+      { name: "🐍 首席黑巫師", maxHp: 135, atkMin: 18, atkMax: 26, desc: "精通進階決鬥咒語，威脅性極高！" }
+    ];
+
+    const state = {
+      waveIndex: 0,
+      playerHp: 100,
+      playerMaxHp: 100,
+      playerMp: 60,
+      playerMaxMp: 60,
+      shield: 0,
+      weakenNextEnemyAttack: false,
+      enemyHp: 80,
+      enemyMaxHp: 80,
+      gameOver: false
+    };
+
+    const logBox = document.getElementById("log-box");
+
+    function addLog(text, type = "system") {
+      const div = document.createElement("div");
+      div.className = `log-entry log-${type}`;
+      div.textContent = text;
+      logBox.appendChild(div);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function loadWave(index) {
+      const enemy = ENEMIES[index];
+      state.waveIndex = index;
+      state.enemyMaxHp = enemy.maxHp;
+      state.enemyHp = enemy.maxHp;
+      state.weakenNextEnemyAttack = false;
+      addLog(`--- 第 ${index + 1} 波對手登場：${enemy.name} ---`, "system");
+      updateUI();
+    }
+
+    function updateUI() {
+      const enemy = ENEMIES[state.waveIndex];
+      document.getElementById("wave-badge").textContent = `第 ${state.waveIndex + 1} / ${ENEMIES.length} 波`;
+      document.getElementById("player-hp-text").textContent = `${Math.max(0, state.playerHp)} / ${state.playerMaxHp}`;
+      document.getElementById("player-mp-text").textContent = `${state.playerMp} / ${state.playerMaxMp}`;
+      document.getElementById("player-hp-bar").style.width = `${Math.max(0, (state.playerHp / state.playerMaxHp) * 100)}%`;
+      document.getElementById("player-mp-bar").style.width = `${(state.playerMp / state.playerMaxMp) * 100}%`;
+      document.getElementById("player-shield").textContent = state.shield > 0 ? `🛡️ 護盾值：${state.shield}` : "";
+
+      document.getElementById("enemy-name").textContent = enemy.name;
+      document.getElementById("enemy-desc").textContent = enemy.desc;
+      document.getElementById("enemy-hp-text").textContent = `${Math.max(0, state.enemyHp)} / ${state.enemyMaxHp}`;
+      document.getElementById("enemy-hp-bar").style.width = `${Math.max(0, (state.enemyHp / state.enemyMaxHp) * 100)}%`;
+      document.getElementById("enemy-intent").textContent = state.weakenNextEnemyAttack ? "魔杖受干擾 (-40%)" : "準備施咒";
+
+      const costs = { stupefy: 0, expelliarmus: 20, protego: 15, patronus: 30 };
+      document.querySelectorAll("button.spell-btn").forEach((btn) => {
+        const key = btn.dataset.spell;
+        btn.disabled = state.gameOver || state.playerMp < costs[key];
+      });
+    }
+
+    function damageEnemy(amount) {
+      state.enemyHp = Math.max(0, state.enemyHp - amount);
+    }
+
+    function damagePlayer(rawAmount) {
+      let dmg = rawAmount;
+      if (state.weakenNextEnemyAttack) {
+        dmg = Math.max(1, Math.round(dmg * 0.6));
+        state.weakenNextEnemyAttack = false;
+      }
+      if (state.shield > 0) {
+        const absorbed = Math.min(state.shield, dmg);
+        state.shield -= absorbed;
+        dmg -= absorbed;
+        addLog(`破心護吸收了 ${absorbed} 點傷害！`, "player");
+      }
+      if (dmg > 0) {
+        state.playerHp = Math.max(0, state.playerHp - dmg);
+        addLog(`${ENEMIES[state.waveIndex].name} 攻擊命中，你受到 ${dmg} 點傷害！`, "enemy");
+      }
+    }
+
+    function enemyTurn() {
+      if (state.enemyHp <= 0) {
+        if (state.waveIndex + 1 < ENEMIES.length) {
+          addLog(`你擊敗了 ${ENEMIES[state.waveIndex].name}！`, "system");
+          loadWave(state.waveIndex + 1);
+        } else {
+          state.gameOver = true;
+          addLog("🏆 恭喜！你通過所有決鬥試煉，成功守護了霍格華茲！", "system");
+          document.getElementById("status-tip").textContent = "決鬥勝利！可按右側按鈕重新挑戰。";
+          updateUI();
+        }
+        return;
+      }
+
+      const enemy = ENEMIES[state.waveIndex];
+      const baseDmg = randInt(enemy.atkMin, enemy.atkMax);
+      damagePlayer(baseDmg);
+
+      if (state.playerHp <= 0) {
+        state.gameOver = true;
+        addLog("💀 你的魔力與體力耗盡，倒在了決鬥場上……", "enemy");
+        document.getElementById("status-tip").textContent = "挑戰失敗，點擊「重新開始決鬥」再試一次！";
+      }
+      updateUI();
+    }
+
+    function castSpell(spell) {
+      if (state.gameOver) return;
+
+      if (spell === "stupefy") {
+        const dmg = randInt(16, 22);
+        state.playerMp = Math.min(state.playerMaxMp, state.playerMp + 8);
+        damageEnemy(dmg);
+        addLog(`你施放「昏擊咒」，造成 ${dmg} 點傷害並回復 8 點魔力。`, "player");
+      } else if (spell === "expelliarmus") {
+        state.playerMp -= 20;
+        const dmg = randInt(26, 34);
+        state.weakenNextEnemyAttack = true;
+        damageEnemy(dmg);
+        addLog(`你喊出「去去武器走」，造成 ${dmg} 點傷害並削弱對手下次攻勢！`, "player");
+      } else if (spell === "protego") {
+        state.playerMp -= 15;
+        state.shield += 24;
+        damageEnemy(10);
+        addLog(`你施展「破心護」，獲得 24 點護盾並反彈 10 點傷害！`, "player");
+      } else if (spell === "patronus") {
+        state.playerMp -= 30;
+        state.playerHp = Math.min(state.playerMaxHp, state.playerHp + 28);
+        damageEnemy(22);
+        addLog(`銀色護衛獸躍出！你回復 28 點生命並對對手造成 22 點傷害。`, "player");
+      }
+
+      updateUI();
+      setTimeout(enemyTurn, 350);
+    }
+
+    function resetGame() {
+      state.waveIndex = 0;
+      state.playerHp = 100;
+      state.playerMp = 60;
+      state.shield = 0;
+      state.weakenNextEnemyAttack = false;
+      state.gameOver = false;
+      logBox.innerHTML = "";
+      document.getElementById("status-tip").textContent = "請選擇一個咒語開始本回合決鬥。";
+      loadWave(0);
+    }
+
+    document.querySelectorAll("button.spell-btn").forEach((btn) => {
+      btn.addEventListener("click", () => castSpell(btn.dataset.spell));
+    });
+    document.getElementById("restart-btn").addEventListener("click", resetGame);
+
+    resetGame();
+  </script>
+</body>
+</html>
